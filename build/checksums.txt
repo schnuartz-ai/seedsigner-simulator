@@ -68,7 +68,7 @@ f179c942138f0f862be773bcca6a5a50891f1ca5cbf4f0ccd3748660a4883736  src/web/wallet
 06818db62a87fc02f5dc811ab4a0064588d89a1a7e67da63995a2ff7de7b0841  src/web/wallet-track.js
 e62d633996dfce70a3bcd15cb5107795985283c22bcf8d1bb56ec411ab185e5e  src/web/wallet-tutorial.js
 6ee6843818287a478b2aac2d0e98da7d56ad58d95224e3644e267c1f9270acb7  src/web/wallet-worker.js
-6f4cbd1396458be61ce95ddc0894a1df8eeef43d87df76ad70ccf37eaf6ec65b  src/web/wallet.html
+c4dde58757894d7ed2c29a0f11831c9abe58bc8167e366fb3aad2db62005609e  src/web/wallet.html
 
 # The stand-in packages, which build/build-wallet-zip.sh copies out of the working
 # tree and into a wallet zip whole. Every other input to that zip is pinned by a
@@ -81,6 +81,8 @@ e62d633996dfce70a3bcd15cb5107795985283c22bcf8d1bb56ec411ab185e5e  src/web/wallet
 0ed612d6aa1b9e48593fa195a41df9470b81375ea8d5bb135466a1fc0e390a53  src/fakes/README.md
 75b3b90df8552bb53df7d7e424483b2c79ceb3bd38f971a2ada2f136780ca9ae  src/fakes/RPi/GPIO.py
 38b94626c551a058fb31654e0bf3f425c29aaed19a76fb89ffb161c51ae03c8e  src/fakes/RPi/__init__.py
+1167d116e6fd06aad0153fa422bf78896414e9278d71e504d5bf5774b3ae7b17  src/fakes/nonce-demo/apply.py
+9c9dac75f61234fd3094793108382ab60d6fdd718df141bc7efd18f046e4d4aa  src/fakes/nonce-demo/fixed_nonce.py
 eb888cf20bca98fd12ea8585357a0bcfc161c00d14496a31f53411784ee3cb88  src/fakes/pyzbar/__init__.py
 f5ba36b26dfdfe8a67fae80f6194cad107a71734d891d6213977af5ffc75369c  src/fakes/pyzbar/pyzbar.py
 5d9307b2e463c9a3911db9cd071709d00cd3dd6965fa48077cbcafdef9edb177  src/smartcard/CardConnectionObserver.py

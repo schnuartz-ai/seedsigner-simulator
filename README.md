@@ -1,13 +1,13 @@
 # SeedSigner simulator
 
-[![try it live](https://img.shields.io/badge/try%20it-live-f7931a?style=flat-square)](https://bitsaga.be/seedsigner-simulator/)
+[![upstream demo](https://img.shields.io/badge/upstream-demo-f7931a?style=flat-square)](https://bitsaga.be/seedsigner-simulator/)
 [![smartcard fork](https://img.shields.io/badge/smartcard%20fork-SeSi--0.8.7%2BShSi--B13-blue?style=flat-square)](UPSTREAM)
 [![stock](https://img.shields.io/badge/stock-0.8.7-blue?style=flat-square)](UPSTREAM)
-[![reproducible-build](https://img.shields.io/github/actions/workflow/status/bitsagarob/seedsigner-simulator/reproducible-build.yml?branch=main&label=reproducible%20build&style=flat-square)](https://github.com/bitsagarob/seedsigner-simulator/actions/workflows/reproducible-build.yml)
-[![tests](https://img.shields.io/github/actions/workflow/status/bitsagarob/seedsigner-simulator/test.yml?branch=main&label=tests&style=flat-square)](https://github.com/bitsagarob/seedsigner-simulator/actions/workflows/test.yml)
-[![upstream tests](https://img.shields.io/github/actions/workflow/status/bitsagarob/seedsigner-simulator/upstream-tests.yml?branch=main&label=upstream%20tests&style=flat-square)](https://github.com/bitsagarob/seedsigner-simulator/actions/workflows/upstream-tests.yml)
-[![release](https://img.shields.io/github/v/release/bitsagarob/seedsigner-simulator?style=flat-square)](https://github.com/bitsagarob/seedsigner-simulator/releases/latest)
-[![licence](https://img.shields.io/github/license/bitsagarob/seedsigner-simulator?style=flat-square)](LICENSE)
+[![reproducible-build](https://img.shields.io/github/actions/workflow/status/schnuartz-ai/seedsigner-simulator/reproducible-build.yml?branch=main&label=reproducible%20build&style=flat-square)](https://github.com/schnuartz-ai/seedsigner-simulator/actions/workflows/reproducible-build.yml)
+[![tests](https://img.shields.io/github/actions/workflow/status/schnuartz-ai/seedsigner-simulator/test.yml?branch=main&label=tests&style=flat-square)](https://github.com/schnuartz-ai/seedsigner-simulator/actions/workflows/test.yml)
+[![upstream tests](https://img.shields.io/github/actions/workflow/status/schnuartz-ai/seedsigner-simulator/upstream-tests.yml?branch=main&label=upstream%20tests&style=flat-square)](https://github.com/schnuartz-ai/seedsigner-simulator/actions/workflows/upstream-tests.yml)
+[![release](https://img.shields.io/github/v/release/schnuartz-ai/seedsigner-simulator?style=flat-square)](https://github.com/schnuartz-ai/seedsigner-simulator/releases/latest)
+[![licence](https://img.shields.io/github/license/schnuartz-ai/seedsigner-simulator?style=flat-square)](LICENSE)
 
 Real [SeedSigner](https://seedsigner.com) firmware, the actual Python off the
 device, running in a browser tab. The screen is a canvas, the buttons are your
@@ -54,26 +54,33 @@ on a device you trust. [SECURITY.md](SECURITY.md#if-you-entered-a-real-seed-phra
 Good for learning the menus, rehearsing a flow, teaching multisig, testing a
 fork's screens. Anything involving money belongs on hardware.
 
-## Three firmwares
+## Four firmware variants
 
 | On the page | What it is | URL |
 | --- | --- | --- |
 | **SeedSigner** | Stock, what a plain SeedSigner runs. The default | `?firmware=stock` |
 | **ShieldSigner** | [3rdIteration/seedsigner](https://github.com/3rdIteration/seedsigner), adds SeedKeeper and Satochip | `?firmware=smartcard` |
 | **Doomsigner** | Our fork of that fork: BIP-352 silent payments, and DOOM in front | `?firmware=doomsigner` |
+| **Nonce demo** | Stock 0.8.7 with fixed ECDSA and Schnorr nonces, for demonstrating key recovery | `?firmware=nonce-demo` |
 
-The **Firmware** control under the device switches. DOOM is off on the first two
-unless `?doom` is on the URL; on Doomsigner it always boots into the game, and
-five taps on the top side button reach the wallet.
+The nonce demo is intentionally insecure: every signature uses `k = 1`, which
+allows recovery of the signing key from signatures. Use only published test
+seeds. Never enter a seed that holds funds.
+
+The **Firmware** control under the device switches. DOOM is off on SeedSigner,
+ShieldSigner and Nonce demo unless `?doom` is on the URL; on Doomsigner it always
+boots into the game, and five taps on the top side button reach the wallet.
 
 ## Try it
 
 ```sh
-git clone https://github.com/bitsagarob/seedsigner-simulator.git
+git clone https://github.com/schnuartz-ai/seedsigner-simulator.git
 cd seedsigner-simulator
 ./build/fetch-assets.sh                 # Pyodide, pinned and hash-checked (~26 MB, once)
 ./build/build-wallet-zip.sh smartcard   # wallet-smartcard.zip, from the pinned commit
 ./build/build-wallet-zip.sh stock       # wallet-stock.zip, from the pinned commit
+./build/build-wallet-zip.sh nonce-demo  # stock plus the fixed-nonce teaching patch
+./build/build-wallet-zip.sh doomsigner # wallet-doomsigner.zip, from the pinned commit
 python3 test/serve.py --port 8770 src/web src/shims build/out
 ```
 
@@ -92,17 +99,19 @@ To run your own fork, `SS_REPO` and `SS_COMMIT` override the pin for one build
 
 - **It is the firmware, not a re-creation.** `wallet-<firmware>.zip` holds that
   firmware's upstream Python tree and its own `Controller.start()` runs it.
-  Menus, seed handling, PSBT parsing, QR encoders: all theirs, unmodified.
-- **Nothing patches the wallet.** Hardware is replaced from outside, by
-  [`src/shims/`](src/shims). Even Testnet-at-boot is a value in the
-  `settings.json` the device reads, not an edit.
+  Menus, seed handling, PSBT parsing, QR encoders are upstream code; the
+  `nonce-demo` variant adds only the clearly identified fixed-nonce patch.
+- **Hardware is replaced from outside**, by [`src/shims/`](src/shims). Even
+  Testnet-at-boot is a value in the `settings.json` the device reads, not an edit.
+  The one wallet patch is the nonce-demo variant, documented and checksummed
+  separately.
 - **Pinned to release tags, not branch tips** ([`UPSTREAM`](UPSTREAM), one
   section per firmware). The fork's tag is the one the official pi0-smartcard
   device image is built from, so this and that device run the same code.
 - **Rebuild and compare.** `build/build-wallet-zip.sh` reproduces a zip byte for
   byte. CI re-derives the hashes on every push on a clean runner and GitHub signs
   the result:
-  `gh attestation verify wallet-smartcard.zip --repo bitsagarob/seedsigner-simulator`.
+  `gh attestation verify wallet-nonce-demo.zip --repo schnuartz-ai/seedsigner-simulator`.
 - **Upstream's own tests run against our pins**
   ([`upstream-tests.yml`](.github/workflows/upstream-tests.yml)): about 2,500
   from the fork's suite, all of stock's. About 200 of the fork's skip themselves,

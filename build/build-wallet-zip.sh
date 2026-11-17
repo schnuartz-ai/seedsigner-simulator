@@ -3,14 +3,15 @@
 # Build a wallet zip: the Python tree the simulator unpacks into the Pyodide
 # filesystem at runtime.
 #
-# There are two firmwares and therefore two zips, and the firmware is the one
+# There are four firmware variants and therefore four zips, and the firmware is the one
 # required argument:
 #
 #   ./build/build-wallet-zip.sh smartcard    ->  wallet-smartcard.zip
 #   ./build/build-wallet-zip.sh stock        ->  wallet-stock.zip
+#   ./build/build-wallet-zip.sh nonce-demo   ->  wallet-nonce-demo.zip
 #
-# No default, deliberately. They are equally first-class, they pin different
-# repositories, and a script that guessed would eventually hand somebody the
+# No default, deliberately. They are separately named variants, and a script
+# that guessed would eventually hand somebody the
 # other one's hash to compare against.
 #
 # The point of this script is that you do not have to trust the zip that is
@@ -66,6 +67,8 @@ Usage: build-wallet-zip.sh FIRMWARE [options]
                                  Satochip support   ->  wallet-smartcard.zip
                      stock       SeedSigner as its own project publishes it
                                                     ->  wallet-stock.zip
+                     nonce-demo  stock with the intentionally unsafe fixed-
+                                 nonce teaching patch -> wallet-nonce-demo.zip
 
   --out DIR        Write the zip here (default: <repo>/build/out)
   --cache DIR      Cache downloaded PyPI artifacts here
@@ -107,9 +110,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "${FIRMWARE}" in
-    smartcard|stock|doomsigner) ;;
-    "")  echo "which firmware? one of: smartcard stock doomsigner" >&2; usage >&2; exit 2 ;;
-    *)   echo "no such firmware: ${FIRMWARE} (one of: smartcard stock doomsigner)" >&2; exit 2 ;;
+    smartcard|stock|nonce-demo|doomsigner) ;;
+    "")  echo "which firmware? one of: smartcard stock nonce-demo doomsigner" >&2; usage >&2; exit 2 ;;
+    *)   echo "no such firmware: ${FIRMWARE} (one of: smartcard stock nonce-demo doomsigner)" >&2; exit 2 ;;
 esac
 
 die() {
@@ -164,8 +167,8 @@ fi
 #   integrity sha256 of the artifact, or the full commit sha
 #   subpath   directory inside the unpacked source that contains `module`
 #
-# One table per firmware, because the two firmwares pin different sets: the
-# smartcard fork needs the whole card stack, stock needs three libraries. They
+# One table per dependency set: the smartcard fork needs the whole card stack,
+# while stock and nonce-demo use the three-library stock set. The lists are
 # are written out separately rather than expressed as a base plus a delta. Two
 # lists a reader can check line by line against two requirements.txt files beat
 # a mechanism that computes the same lists and has to be understood first.
@@ -438,7 +441,7 @@ STAGE_PACKAGES=(
 )
 
 ;;
-stock)
+stock|nonce-demo)
 
 # Stock's whole requirements.txt is five lines, and two of them do not belong in
 # a zip:
@@ -458,7 +461,8 @@ stock)
 # the same versions and the same sha256, that the smartcard table pins, because
 # both firmwares pin the same two versions.
 #
-# urtypes is the one place the two firmwares genuinely disagree. The fork pins a
+# urtypes is the one place the smartcard and stock dependency sets genuinely
+# disagree. The fork pins a
 # selfcustody git commit; stock pins PyPI 1.0.1. Their trees differ by a single
 # line, `from .crypto import *` in __init__.py, which PyPI 1.0.1 has and the
 # pinned commit does not. Reusing the fork's pin would have built and probably
@@ -693,7 +697,7 @@ UPSTREAM_FILE="${REPO_ROOT}/UPSTREAM"
 # upstream_field KEY
 #
 # One key out of the [FIRMWARE] section of UPSTREAM. Section-aware, because that
-# file now describes two firmwares and a parser that ignored the headers would
+# file now describes several variants and a parser that ignored the headers would
 # cheerfully hand back the other one's commit. The same awk program appears in
 # .github/workflows/reproducible-build.yml and upstream-tests.yml, which read
 # the same file for the same reason.
@@ -763,6 +767,16 @@ for required in src/seedsigner src/main.py LICENSE.md; do
     [ -e "${UPSTREAM_SRC}/${required}" ] || die "the tree at ${UPSTREAM_COMMIT} is missing ${required}"
 done
 
+# This variant deliberately demonstrates why signing nonces must be unique.
+# Its complete build-time input is checksummed with the other first-party
+# stand-ins, and the patcher fails closed if the pinned source changes shape.
+if [ "${FIRMWARE}" = "nonce-demo" ]; then
+    NONCE_DEMO_DIR="${REPO_ROOT}/src/fakes/nonce-demo"
+    verify_against_manifest "${NONCE_DEMO_DIR}"
+    step "applying the educational fixed-nonce patch"
+    python3 "${NONCE_DEMO_DIR}/apply.py" "${UPSTREAM_SRC}" "${NONCE_DEMO_DIR}/fixed_nonce.py"
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Timestamp
 # ---------------------------------------------------------------------------
@@ -783,9 +797,9 @@ step "SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
 # keeps it out of the staged tree by construction rather than by filtering.
 rm -rf -- "${UPSTREAM_SRC}/.git"
 
-# Verbatim. Nothing in this repository patches the wallet -- the hardware seams
-# are replaced from outside, by src/shims (which the worker writes into the
-# filesystem after unpacking) and by the stand-in packages staged below.
+# Stock, smartcard and Doomsigner are copied from their pins. The nonce-demo
+# source has already received its checked overlay. Hardware seams are replaced
+# from outside, by src/shims and the stand-in packages staged below.
 cp -R -- "${UPSTREAM_SRC}/src/seedsigner" "${STAGING}/seedsigner"
 cp    -- "${UPSTREAM_SRC}/src/main.py"    "${STAGING}/main.py"
 

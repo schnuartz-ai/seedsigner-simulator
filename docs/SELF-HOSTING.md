@@ -45,6 +45,7 @@ verified than committed.
 ./build/fetch-assets.sh                 # Pyodide 0.26.4 -> src/web/pyodide/, sha256-checked
 ./build/build-wallet-zip.sh smartcard   # -> build/out/wallet-smartcard.zip, from the pinned commit
 ./build/build-wallet-zip.sh stock       # -> build/out/wallet-stock.zip, from the pinned commit
+./build/build-wallet-zip.sh nonce-demo  # -> build/out/wallet-nonce-demo.zip, intentionally unsafe teaching build
 ```
 
 `fetch-assets.sh --check` re-verifies what is already on disk, and
@@ -120,8 +121,8 @@ the worker and the shims all fetch each other by relative path):
 | `sw.js`, `manifest.json`, `icon-*.png`, `apple-touch-icon.png` | `src/web/` | offline cache and PWA install; optional, the wallet runs without them |
 | `pyodide/` | `fetch-assets.sh` | ~26 MB: the runtime plus the wheels for Pillow, pycryptodome and cryptography |
 | `browser_display.py`, `browser_camera.py`, `browser_qr.py` | `src/shims/` | fetched at boot and written into Pyodide's filesystem |
-| `wallet-smartcard.zip`, `wallet-stock.zip` | `build/out/` | one per firmware, each the pinned `seedsigner` tree plus its pure-Python dependencies plus this repository's stand-in packages. Serve both: the page picks one with `?firmware=` |
-| `wallet-smartcard.build-info.json`, `wallet-stock.build-info.json` | `build/out/` | what each build is: pin, tag, published hashes, dependency versions. The page's **Technical details** panel is filled from it, and says it cannot describe the build if it is missing |
+| `wallet-smartcard.zip`, `wallet-stock.zip`, `wallet-doomsigner.zip`, `wallet-nonce-demo.zip` | `build/out/` | pinned firmware trees plus dependencies and stand-ins; nonce-demo adds the checksummed fixed-nonce patch. Serve all four: the page picks one with `?firmware=` |
+| `wallet-*.build-info.json` | `build/out/` | each build's pin, tag, hashes and dependency versions. The page's **Technical details** panel reads these files |
 
 The shims sit next to the page rather than inside `wallet.zip` deliberately: it
 keeps the zip exactly what the build script produced, with the seams visibly

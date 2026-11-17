@@ -10,6 +10,7 @@ hour it takes to discover them.
 ./build/fetch-assets.sh                                  # Pyodide, pinned and hash-checked
 ./build/build-wallet-zip.sh smartcard                    # from the [smartcard] pin in UPSTREAM
 ./build/build-wallet-zip.sh stock                        # from the [stock] pin in UPSTREAM
+./build/build-wallet-zip.sh nonce-demo                   # stock plus the fixed-nonce teaching patch
 python3 test/serve.py --port 8770 src/web src/shims build/out
 ```
 

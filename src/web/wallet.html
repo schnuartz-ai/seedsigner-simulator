@@ -908,6 +908,9 @@
   id="warning-mainnet">. On Mainnet this page holds the real mainnet keys for
   whatever you give it, with no secure element under them: treat anything typed
   in as public.</span></p>
+  <p class="warn" id="nonce-demo-warning" role="alert" hidden><strong>Nonce demo:
+  every signature reuses k = 1, so a private key can be recovered from signatures.
+  Use only published test seeds.</strong></p>
       <!-- Only offered where it is any use: on a phone, where the page around the
            device is what is making the device small. -->
   <details id="about">
@@ -959,12 +962,12 @@
           <ul class="deps" id="build-deps"></ul>
 
           <p class="links">Check it yourself:
-          <a href="https://github.com/bitsagarob/seedsigner-simulator/blob/main/build/build-wallet-zip.sh" rel="noopener">rebuild the zip</a> ·
-          <a href="https://github.com/bitsagarob/seedsigner-simulator/actions/workflows/reproducible-build.yml" rel="noopener">the same rebuild on a clean runner</a> ·
-          <a href="https://github.com/bitsagarob/seedsigner-simulator/actions/workflows/test.yml" rel="noopener">tests</a> ·
-          <a href="https://github.com/bitsagarob/seedsigner-simulator/actions/workflows/upstream-tests.yml" rel="noopener">upstream's own tests</a> ·
-          <a href="https://github.com/bitsagarob/seedsigner-simulator" rel="noopener">source</a> ·
-          <a href="https://github.com/bitsagarob/seedsigner-simulator/releases/latest" rel="noopener">latest release</a> ·
+          <a href="https://github.com/schnuartz-ai/seedsigner-simulator/blob/main/build/build-wallet-zip.sh" rel="noopener">rebuild the zip</a> ·
+          <a href="https://github.com/schnuartz-ai/seedsigner-simulator/actions/workflows/reproducible-build.yml" rel="noopener">the same rebuild on a clean runner</a> ·
+          <a href="https://github.com/schnuartz-ai/seedsigner-simulator/actions/workflows/test.yml" rel="noopener">tests</a> ·
+          <a href="https://github.com/schnuartz-ai/seedsigner-simulator/actions/workflows/upstream-tests.yml" rel="noopener">upstream's own tests</a> ·
+          <a href="https://github.com/schnuartz-ai/seedsigner-simulator" rel="noopener">source</a> ·
+          <a href="https://github.com/schnuartz-ai/seedsigner-simulator/releases/latest" rel="noopener">latest release</a> ·
           <a href="https://github.com/bitsagarob/doomsigner-os" rel="noopener">device images</a> ·
           <a href="?doom">DOOM on it</a></p>
         </div>
@@ -1182,7 +1185,7 @@ const DEBUG = new URLSearchParams(location.search).has("debug");
 // Automated browser tests (?e2e=1): skip DOOM, shorten waits, expose panel hooks.
 const E2E = new URLSearchParams(location.search).has("e2e");
 
-// Which firmware to run. Two are built: "stock" is SeedSigner as its own
+// Which firmware to run. "stock" is SeedSigner as its own
 // project publishes it, and it is the default because it is much the lighter
 // boot -- it needs neither cryptography nor pycryptodome, nor the openssl and
 // cffi that come behind them, and its wallet zip is under half the size. That
@@ -1205,7 +1208,7 @@ const E2E = new URLSearchParams(location.search).has("e2e");
 // file to fetch. Doomsigner carries MuSig2; there is no separate musig
 // firmware any more, it was folded into Doomsigner because MuSig2 is the point
 // of Doomsigner.
-const FIRMWARES = ["stock", "smartcard", "doomsigner"];
+const FIRMWARES = ["stock", "smartcard", "doomsigner", "nonce-demo"];
 const search = new URLSearchParams(location.search);
 // Regtest joins mainnet and testnet because a MuSig2 spend has to be driven
 // against a node that will actually relay it, and the only such node here is a
@@ -1224,6 +1227,7 @@ const tutorialEntry = Object.hasOwn(WalletTutorial.registry, tutorialId)
 const FIRMWARE = FIRMWARES.includes(asked) ? asked
                : tutorialEntry ? tutorialEntry.firmwares[0]
                : search.has("doom") ? "smartcard" : FIRMWARES[0];
+document.getElementById("nonce-demo-warning").hidden = FIRMWARE !== "nonce-demo";
 // A name for what the rest of the file asks about, kept for readability.
 const BASE_FIRMWARE = FIRMWARE;
 // Which firmware actually loaded, readable from outside. A driver that asks the
@@ -1304,6 +1308,14 @@ const FIRMWARE_INFO = {
           "runs. It has no smartcard support, so there is no card tray.",
     panel: "SeedSigner as its own project publishes it, which is what a plain " +
            "device runs",
+  },
+  "nonce-demo": {
+    button: "Nonce demo",
+    says: "Running stock SeedSigner 0.8.7 with the educational fixed-nonce " +
+          "patch. Every signature reuses k = 1, so signatures reveal the " +
+          "private key. Never enter a real seed.",
+    panel: "stock SeedSigner 0.8.7 with an intentionally unsafe fixed-nonce " +
+           "teaching patch; use only published test seeds",
   },
   doomsigner: {
     button: "Doomsigner",
@@ -1438,7 +1450,7 @@ if (!SMARTCARD) document.getElementById("about-smartcard").remove();
 // different wallet underneath it, and the URL is the only thing that carries
 // the choice anyway.
 //
-// Three to choose from. Doomsigner is our own fork of the ShieldSigner fork,
+// Four to choose from. Doomsigner is our own fork of the ShieldSigner fork,
 // adding BIP-352 silent payments, with DOOM in front; five taps on the top side
 // button cycle the two. The other two land on a wallet. Silent payments live
 // only on Doomsigner.
@@ -1446,6 +1458,7 @@ const CHOICES = [
   { id: "doomsigner", label: "Doomsigner", firmware: "doomsigner" },
   { id: "smartcard", label: "ShieldSigner", firmware: "smartcard" },
   { id: "stock", label: "SeedSigner", firmware: "stock" },
+  { id: "nonce-demo", label: "Nonce demo", firmware: "nonce-demo" },
 ];
 
 function chosenNow() {
@@ -1534,8 +1547,12 @@ function fillPanel(info) {
   const described = FIRMWARE_INFO[info.firmware];
   panelText("build-firmware", info.firmware + (described ? ", " + described.panel : ""));
   panelLink("build-repo", web.replace(/^https:\/\//, ""), web);
-  panelLink("build-tag", info.upstream.tag,
-            web + "/releases/tag/" + encodeURIComponent(info.upstream.tag));
+  if (info.upstream.tag.startsWith("local-")) {
+    panelText("build-tag", info.upstream.tag + " (simulator patch)");
+  } else {
+    panelLink("build-tag", info.upstream.tag,
+              web + "/releases/tag/" + encodeURIComponent(info.upstream.tag));
+  }
   panelLink("build-commit", info.upstream.commit, web + "/commit/" + info.upstream.commit);
   panelText("build-pyodide", info.pyodide);
   panelText("build-zip", info.wallet_zip.name);

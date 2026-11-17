@@ -1,10 +1,9 @@
-# The two firmwares this simulator runs, pinned.
+# The simulator's firmware variants, pinned.
 #
-# src/seedsigner in a built wallet zip is one of the trees below, verbatim.
-# Nothing in this repository patches either of them: the hardware seams are
-# replaced from the outside, by the modules in src/shims and by the stand-in
-# packages in src/smartcard and src/fakes. That is the property the build script
-# exists to let you check for yourself.
+# Stock, ShieldSigner and Doomsigner are pinned to their source trees. The
+# nonce-demo variant applies the small, explicitly unsafe teaching patch in
+# src/fakes/nonce-demo to the pinned stock tree. Hardware seams are replaced by
+# src/shims and the stand-in packages in src/smartcard and src/fakes.
 #
 # Named sections, and every consumer of this file names the section it wants:
 # build/build-wallet-zip.sh, which assembles the zip, and the two workflows that
@@ -12,9 +11,9 @@
 # a key outside a section, so the parsers cannot silently pick up the wrong pin
 # if a section is renamed or removed.
 #
-# The first two sections are the two firmwares, and only those two are built. The
-# two after them pin the smartcard applets, which nothing here builds at all; the
-# comment above them says what they are for.
+# The firmware sections come first. The sections after them pin smartcard
+# applets, which nothing here builds; the comment above them says what they are
+# for.
 #
 # Every pin here is a release tag rather than a branch tip. A tip moves: rebase
 # or force-push dev and the sha stops existing on the remote, at which point every
@@ -37,6 +36,18 @@ tag    = 0.8.7
 
 wallet_zip_sha256          = 2db897dea90a0ecc090e959cbea34c6b4afbaa860478a260cc51f8cfdfd0a253
 wallet_zip_contents_sha256 = dbea45131cc89e391b8ced909975b7d0030771d1d284142dd8287668130f2974
+
+# An educational variant of stock SeedSigner. The source commit is the same
+# release as [stock]; the build applies the fixed-nonce teaching patch tracked
+# under src/fakes/nonce-demo. This is intentionally unsafe and must only be used
+# with published test seeds. Hashes below describe the patched build.
+[nonce-demo]
+repo   = https://github.com/SeedSigner/seedsigner.git
+commit = e0a80d4b33b8eb7fb1e9fd14a27b7cd11c7d2cd6
+tag    = local-nonce-demo-v1
+
+wallet_zip_sha256          = fc7b09e39514ba6a3a2a9fe340cb31b5b149d17773fbb2253bf92fbbef8517ca
+wallet_zip_contents_sha256 = 0338f39363e8b9f79643c74ac9c73304f4d3ec67255eb80c38efc4d7cb12c6ca
 
 # The 3rdIteration fork, which merges the release above and adds smartcard
 # support: SeedKeeper and Satochip cards, the card menus, and the dependency

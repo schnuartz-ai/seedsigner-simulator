@@ -48,11 +48,11 @@ jobs:
     # not: two independently named results, so a red mark says which firmware
     # stopped reproducing without anyone opening the log.
     strategy:
-      # Both are asked, always. Knowing that only one of them moved is most of
+      # Every variant is asked, always. Knowing that only one moved is most of
       # the diagnosis, and fail-fast would throw that away.
       fail-fast: false
       matrix:
-        firmware: [smartcard, stock, doomsigner]
+        firmware: [smartcard, stock, nonce-demo, doomsigner]
 
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +149,7 @@ jobs:
       # Having re-derived the published hash, say so in a form that is not our
       # word for it. GitHub signs a statement that this exact file came out of
       # this workflow, at this commit, and records it against the repository;
-      # `gh attestation verify wallet-smartcard.zip --repo bitsagarob/seedsigner-simulator`
+      # `gh attestation verify wallet-nonce-demo.zip --repo schnuartz-ai/seedsigner-simulator`
       # checks it against a file you downloaded, with nothing from us involved.
       # Every firmware is attested, each by its own matrix leg, because all are
       # served and either one is a file somebody may want to check.
